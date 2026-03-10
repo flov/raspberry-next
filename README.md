@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🫐 raspberry-next
 
-## Getting Started
+A live system monitor for Raspberry Pi, built with Next.js. Displays real-time hardware metrics in a clean dark dashboard — auto-refreshing every 3 seconds.
 
-First, run the development server:
+![dashboard](https://placehold.co/800x450/1f2937/6b7280?text=raspberry-next+dashboard)
+
+## Metrics
+
+| Category | What's shown |
+|----------|-------------|
+| **System** | Hostname, kernel version, uptime, network IP(s) |
+| **CPU** | Model, core count, frequency, temperature, usage %, load average (1/5/15m) |
+| **GPU** | Temperature (via `vcgencmd`) |
+| **Memory** | Total / used / free with usage bar |
+| **Disk** | Total / used / free for `/` with usage bar |
+| **Power** | Core voltage, throttle warnings (under-voltage, freq cap, thermal limit) |
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in a browser on the same network.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To run persistently in the background:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun build
+bun start
+```
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js 16](https://nextjs.org) — App Router, Route Handlers
+- [React 19](https://react.dev)
+- [Tailwind CSS v4](https://tailwindcss.com)
+- TypeScript
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How it works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`GET /api/system` is a server-side Route Handler that reads metrics from:
 
-## Deploy on Vercel
+- Node.js `os` module — hostname, arch, memory, load averages
+- `/proc/stat` — CPU usage (sampled twice, 200 ms apart)
+- `/sys/class/thermal/thermal_zone0/temp` — CPU temperature
+- `/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq` — CPU frequency
+- `vcgencmd` — GPU temperature, core voltage, throttle flags
+- `df -B1 /` — disk usage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The page polls this endpoint every 3 seconds and renders the results client-side.
